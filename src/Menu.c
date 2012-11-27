@@ -3,6 +3,7 @@
 
 #include "Player.h"
 #include "Menu.h"
+#include "Sprites.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -18,12 +19,16 @@ Gamestate Menu = {Menu_Init, Menu_OnEnter, NULL, Menu_Update, Menu_Draw};
 
 
 int menuSelectedItem = 0;
-static const int itemCount = 13;
+static const int itemCount = 12;
 static const int borderX = 16;
 static const int borderY = 16;
 static const int rectBorder = 2;
 static const int rowHeight = 10;
 static const int colWidth = 16;
+static const int circleRadius = 2;
+static const int menuTickSpeed = 10;
+
+static int lastMenuUpdated = 0;
 
 int listEdgeX = 16 + 2 * 2 + 1;   //borderX + rectBorder * 2 + 1;
 int listEdgeY = 16 + 2 * 2 + 10 + 2;  //borderY + rectBorder * 2 + 1 + rowHeight + 2;
@@ -34,18 +39,24 @@ int itemIndex = 0;
 void Menu_Init(struct Gamestate* state){
 	setFont(fontwhite8);
 	menuSelectedItem = 0;
+	lastMenuUpdated = SysTickCounter;
 }
 
 void Menu_Update(uint32_t a){
 
-	if (GetControllerState1().buttons.Up){
-		if(menuSelectedItem > 0) menuSelectedItem--;
-	}
-	if (GetControllerState1().buttons.Down){
-		if(menuSelectedItem < itemCount) menuSelectedItem++;
-	}
-	if (GetControllerState1().buttons.Start){
-		//ExitState();
+	if (SysTickCounter-lastMenuUpdated > menuTickSpeed){
+		if (GetControllerState1().buttons.Up){
+			if(menuSelectedItem > 0) menuSelectedItem--;
+			lastMenuUpdated = SysTickCounter;
+		}
+		if (GetControllerState1().buttons.Down){
+			if(menuSelectedItem < itemCount) menuSelectedItem++;
+			lastMenuUpdated = SysTickCounter;
+		}
+		if (GetControllerState1().buttons.Start){
+			//ExitState();
+			lastMenuUpdated = SysTickCounter;
+		}
 	}
 
 }
@@ -64,14 +75,22 @@ void Menu_Draw(Bitmap* b){
 
 	//Column Header
 	char *itemHeader;
-			asprintf(&itemHeader, "Itemname    SPD  SPW   INV    PRZ");
-			DrawText(b, itemHeader, listEdgeX + 0 * colWidth, listEdgeY - rowHeight -2);
-			free(itemHeader);
+	asprintf(&itemHeader, "Itemname    SPD  SPW   INV    PRZ");
+	DrawText(b, itemHeader, listEdgeX + 0 * colWidth, listEdgeY - rowHeight -2);
+	free(itemHeader);
 
 	//Items
 	for(int i = 0 ; i < maxListRows ; i++){
 		itemIndex = i + menuSelectedItem - 4;
-		if (itemIndex >= 0 && itemIndex < itemCount){
+		if (itemIndex >= 0 && itemIndex <= itemCount){
+			//Item Owned
+			if(listCount(&p1.inventory, (Item*)itemList[itemIndex]) >= 1){
+				DrawFilledCircle(b, listEdgeX +circleRadius , listEdgeY + rowHeight * i + circleRadius + 1, circleRadius ,RGB(0,255,0));
+			}
+			//Mark Items you can't afford
+			if(itemList[itemIndex]->prize > p1.money){
+				DrawFilledCircle(b, listEdgeX +circleRadius , listEdgeY + rowHeight * i + circleRadius + 1, circleRadius ,RGB(255,0,0));
+			}		
 			//Item name
 			char *itemName;
 			asprintf(&itemName, itemList[itemIndex]->name);
@@ -96,11 +115,12 @@ void Menu_Draw(Bitmap* b){
 			DrawText(b, itemINV, listEdgeX + 11 * colWidth, listEdgeY + rowHeight * i);
 			free(itemINV);		
 
-
+			//Item Prize
 			char *itemPRZ;
 			asprintf(&itemPRZ, "% 5d", itemList[itemIndex]->prize);
 			DrawText(b, itemPRZ, listEdgeX + 14 * colWidth, listEdgeY + rowHeight * i);
-			free(itemPRZ);	
+			free(itemPRZ);
+			setFont(fontwhite8);
 		}else{
 			// dunno
 		}
@@ -111,16 +131,28 @@ void Menu_Draw(Bitmap* b){
 	//Separate ItemList from Character Infos
 	DrawHorizontalLine(b, listEdgeX , listEdgeY + 10 * rowHeight + 2 , SCREEN_X - (2 * 2 * rectBorder + 2 * borderX + 2), RGB(255,255,255));
 
+	//Draw Player Info (Cash / Free Space)
 	setFont(fontwhite16);
 	char *playerCash;
 	asprintf(&playerCash, "$:% 3d Inv:% 3d", p1.money, getFreeInvSpace(&p1));
 	DrawText(b, playerCash, listEdgeX , listEdgeY + rowHeight * 11);
 	free(playerCash);
+	setFont(fontwhite8);	
 
-	setFont(fontwhite8);
+
+	//Draw Players Minerals
+	//Coal
+	DrawRLEBitmap(b,sprt_coal,listEdgeX + 1 * colWidth,listEdgeY + rowHeight * 13);
+	//Iron
+	DrawRLEBitmap(b,sprt_treasure1,listEdgeX + 5 * colWidth,listEdgeY + rowHeight * 13);
+	//Gold
+	DrawRLEBitmap(b,sprt_gold,listEdgeX + 9 * colWidth,listEdgeY + rowHeight * 13);
+	//Diamonds
+	DrawRLEBitmap(b,sprt_diam_red,listEdgeX + 13 * colWidth,listEdgeY + rowHeight * 13);
+
 	char *playerMinerals;
-	asprintf(&playerMinerals, "C:% 3d  I:% 3d  G:% 3d  D:% 3d", 20, 40, 60, 90);
-	DrawText(b, playerMinerals, listEdgeX + 0 * colWidth, listEdgeY + rowHeight * 14);
+	asprintf(&playerMinerals, "     % 3d     % 3d     % 3d     % 3d", 20, 40, 60, 90);
+	DrawText(b, playerMinerals, listEdgeX - colWidth / 2, listEdgeY + rowHeight * 13.5);
 	free(playerMinerals);	
 
 
