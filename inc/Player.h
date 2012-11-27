@@ -56,11 +56,24 @@ typedef struct Player{
 
 void initPlayer(Player *p);
 bool itemBuy(Player *p, Item *i);
+
+//Sells an Item, returns true if successful
+bool itemSell(Player *p, Item *i);
 void validatePlayerValues(Player *p);
 void updateItems(Player *p);
 int getFreeInvSpace(Player *p);
+
 //Returns amount of specified mineral
 int getMineralAmount(Player *p, MineralTypes m);
+
+//Picks up a mineral, returns true if successful
+bool mineralPickup(Player *p, MineralTypes m);
+
+//Sells a mineral, returns true if successful
+bool mineralSell(Player *p, MineralTypes m, int amount);
+
+//Returns if player is allowed to move (Player might be overloaded)
+bool canPlayerMove(Player *p);
 extern Player p1;
 
 #endif

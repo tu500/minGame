@@ -11,6 +11,8 @@ void Menu_OnEnter(struct Gamestate*);
 void Menu_Update(uint32_t a);
 void Menu_Draw(Bitmap* b);
 
+void sellAllMinerals(Player *p);
+
 
 
 #endif

@@ -40,7 +40,7 @@ Mineral mineralInfo[MINERALCOUNT] = {
     {    5,   3,   6, 100,   0,  12,"Coal", "Nice coal."},
     {   35,   7,   9,  70,   5,  18,"Iron", "Some iron. Sells good."},
     {   60,  11,  20,  40,   9,  24,"Gold", "Shiny gold. Worth quite a lot."},
-    {  300, 400,  50,  10,  22,  30,"Diamond", "Precious diamonds. Aren't they beautiful?"}
+    {  300,  40,  50,  10,  22,  30,"Diamond", "Precious diamonds. Aren't they beautiful?"}
 };
 
 //////// Starting Values ///////////
@@ -75,7 +75,7 @@ void initPlayer(Player *p){
 bool itemBuy(Player *p, Item *i){
     //Check if Item is already owned
     if(listCount(&p->inventory, i) >= 1 ) return false;
-    int newmoney = p->money -= i->prize;
+    int newmoney = p->money - i->prize;
     int newspace = getFreeInvSpace(p) - i->inventorySizeTaken;
     if( newmoney >= 0 && newspace >= 0){
         p->money = newmoney;
@@ -90,7 +90,7 @@ bool itemBuy(Player *p, Item *i){
 bool itemSell(Player *p, Item *i){
     if(listSearch(&p->inventory, i)){
         listRemoveByValue(&p->inventory, i);
-        p->money += i->prize*(2/3);
+        p->money += i->prize*2/3;
         updateItems(p);
         return true;
     }
@@ -131,8 +131,7 @@ int getMineralAmount(Player *p, MineralTypes m){
 void validatePlayerValues(Player *p){
     if(p->speedDig <= 0) p->speedDig = 1;
     if(p->speedWalk <= 0) p->speedWalk = 1;
-    if(p->maxDepth <= 0) p->maxDepth = 1;
-    if(p->inventorySize <= 0) p->inventorySize = 1;    
+    if(p->maxDepth <= 0) p->maxDepth = 1;    
 }
 
 //Updates Player stats based on items
@@ -147,6 +146,7 @@ void updateItems(Player *p){
         p->speedWalk += ((Item*)i->val)->speedWalkMod;
         p->maxDepth += ((Item*)i->val)->maxDepthMod;
         p->inventorySize += ((Item*)i->val)->inventorySizeMod;
+        p->inventorySize -= ((Item*)i->val)->inventorySizeTaken;
     }
     validatePlayerValues(p);
 }

@@ -111,7 +111,7 @@ void Update(uint32_t a)
 
   //TiledMap_update(map, a);
   ChunkedMap_update(map, a);
-  if (!player.moving)
+  if (!player.moving && canPlayerMove(&p1))
   {
         if (GetControllerState1().buttons.Up){
           MObj_moveTo(&player, player.x, player.y - (PIXEL_RESOLUTION * map->tileSize), PIXEL_RESOLUTION, true);
@@ -166,6 +166,16 @@ void Draw(Bitmap *b)
   asprintf(&highscoreString, "%d, %d", player.x, player.y);
   DrawText(b, highscoreString, 0, 8);
   free(highscoreString);
+  //Warn if player is overloaded
+  if(!canPlayerMove(&p1)){
+    setFont(fontblack16);
+    char *message;
+    asprintf(&message, "OVERLOAD!");
+    DrawFilledRectangle(b, 100, 91, 140, 17, RGB(255, 0, 0));
+    DrawText(b, message, 84, 92);
+    free(message); 
+    setFont(fontwhite8);   
+  }
 
 	isAlive(b);
 }

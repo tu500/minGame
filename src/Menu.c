@@ -8,13 +8,6 @@
 #include <stdio.h>
 #include <string.h>
 
-
-
-void Menu_Init(struct Gamestate*);
-void Menu_OnEnter(struct Gamestate*);
-void Menu_Update(uint32_t a);
-void Menu_Draw(Bitmap* b);
-
 Gamestate Menu = {Menu_Init, Menu_OnEnter, NULL, Menu_Update, Menu_Draw};
 
 
@@ -26,7 +19,7 @@ static const int rectBorder = 2;
 static const int rowHeight = 10;
 static const int colWidth = 16;
 static const int circleRadius = 2;
-static const int menuTickSpeed = 10;
+static const int menuTickSpeed = 20;
 
 static int lastMenuUpdated = 0;
 
@@ -53,8 +46,27 @@ void Menu_Update(uint32_t a){
 			if(menuSelectedItem < itemCount) menuSelectedItem++;
 			lastMenuUpdated = SysTickCounter;
 		}
+		//Return to Game
 		if (GetControllerState1().buttons.Start){
-			//ExitState();
+			ExitState();
+			lastMenuUpdated = SysTickCounter;
+		}
+		//Sell Item
+		if (GetControllerState1().buttons.B){
+			itemSell(&p1, (Item*)itemList[menuSelectedItem]);
+			lastMenuUpdated = SysTickCounter;
+		}
+		//Buy Item
+		if (GetControllerState1().buttons.A){
+			itemBuy(&p1, (Item*)itemList[menuSelectedItem]);
+			lastMenuUpdated = SysTickCounter;
+		}
+		if (GetControllerState1().buttons.X){
+			sellAllMinerals(&p1);
+			lastMenuUpdated = SysTickCounter;
+		}
+		if (GetControllerState1().buttons.Y){
+			mineralPickup(&p1, MIN_DIAMOND);
 			lastMenuUpdated = SysTickCounter;
 		}
 	}
@@ -83,14 +95,14 @@ void Menu_Draw(Bitmap* b){
 	for(int i = 0 ; i < maxListRows ; i++){
 		itemIndex = i + menuSelectedItem - 4;
 		if (itemIndex >= 0 && itemIndex <= itemCount){
+			//Mark Items you can't afford
+			if(itemList[itemIndex]->prize > p1.money){
+				DrawFilledCircle(b, listEdgeX +circleRadius , listEdgeY + rowHeight * i + circleRadius + 1, circleRadius ,RGB(255,0,0));
+			}	
 			//Item Owned
 			if(listCount(&p1.inventory, (Item*)itemList[itemIndex]) >= 1){
 				DrawFilledCircle(b, listEdgeX +circleRadius , listEdgeY + rowHeight * i + circleRadius + 1, circleRadius ,RGB(0,255,0));
 			}
-			//Mark Items you can't afford
-			if(itemList[itemIndex]->prize > p1.money){
-				DrawFilledCircle(b, listEdgeX +circleRadius , listEdgeY + rowHeight * i + circleRadius + 1, circleRadius ,RGB(255,0,0));
-			}		
 			//Item name
 			char *itemName;
 			asprintf(&itemName, itemList[itemIndex]->name);
@@ -134,7 +146,7 @@ void Menu_Draw(Bitmap* b){
 	//Draw Player Info (Cash / Free Space)
 	setFont(fontwhite16);
 	char *playerCash;
-	asprintf(&playerCash, "$:% 3d Inv:% 3d", p1.money, getFreeInvSpace(&p1));
+	asprintf(&playerCash, "$:%3d Inv:%3d", p1.money, getFreeInvSpace(&p1));
 	DrawText(b, playerCash, listEdgeX , listEdgeY + rowHeight * 11);
 	free(playerCash);
 	setFont(fontwhite8);	
@@ -151,9 +163,20 @@ void Menu_Draw(Bitmap* b){
 	DrawRLEBitmap(b,sprt_diam_red,listEdgeX + 13 * colWidth,listEdgeY + rowHeight * 13);
 
 	char *playerMinerals;
-	asprintf(&playerMinerals, "     % 3d     % 3d     % 3d     % 3d", 20, 40, 60, 90);
+	asprintf(&playerMinerals, "     % 3d     % 3d     % 3d     % 3d",
+		getMineralAmount(&p1, MIN_COAL),
+		getMineralAmount(&p1, MIN_IRON),
+		getMineralAmount(&p1, MIN_GOLD),
+		getMineralAmount(&p1, MIN_DIAMOND));
 	DrawText(b, playerMinerals, listEdgeX - colWidth / 2, listEdgeY + rowHeight * 13.5);
 	free(playerMinerals);	
 
 
+}
+
+
+void sellAllMinerals(Player *p){
+	for(int i = 0 ; i < MINERALCOUNT; i++){
+		mineralSell(p, i, getMineralAmount(p, i));
+	}
 }
