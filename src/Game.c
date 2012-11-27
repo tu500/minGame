@@ -25,11 +25,18 @@ ChunkedMap *map;
 TileInfo tileInfo[3];
 MapObject player;
 
+
+
+Animation playerAnimR;
+Animation playerAnimL;
+
 void testinit()
 {
-  tileInfo[0] = (TileInfo) {sprt_empty, COLLISION_NONE};
-  tileInfo[1] = (TileInfo) {sprt_earth, COLLISION_BB};
-  tileInfo[2] = (TileInfo) {sprt_diamonds, COLLISION_BB};
+  playerAnimR =  (Animation){50, 2, ANIM_REPEAT, &sprt_playerR[0]};
+  playerAnimL =  (Animation){50, 2, ANIM_REPEAT, &sprt_playerL[0]};
+  tileInfo[0] =(TileInfo) {sprt_earth, COLLISION_NONE};
+  tileInfo[1] = (TileInfo) {sprt_diamonds, COLLISION_BB};
+  tileInfo[2] = (TileInfo) {sprt_diam_green, COLLISION_BB};
   map = ChunkedMap_init(16, tileInfo, loadChunk, saveChunk);
   //map = TiledMap_init(20, 20, 16, tileInfo);
   //map->tiles[88] = 1;
@@ -37,10 +44,12 @@ void testinit()
 
   player = (MapObject) {
     0, 0,
-    sprt_diamonds,
+    NULL,
     16 * PIXEL_RESOLUTION, 16 * PIXEL_RESOLUTION,
-    COLLISION_BB
+    COLLISION_BB,
+    .animation=&playerAnimR
   };
+
   listInsert(&map->objects, &player);
 }
 
@@ -111,19 +120,26 @@ void Update(uint32_t a)
 
   //TiledMap_update(map, a);
   ChunkedMap_update(map, a);
+
   if (!player.moving && canPlayerMove(&p1))
-  {
+  {  
         if (GetControllerState1().buttons.Up){
           MObj_moveTo(&player, player.x, player.y - (PIXEL_RESOLUTION * map->tileSize), PIXEL_RESOLUTION, true);
+          player.animationTime=25;
         }
         if (GetControllerState1().buttons.Down){
           MObj_moveTo(&player, player.x, player.y + (PIXEL_RESOLUTION * map->tileSize), PIXEL_RESOLUTION, true);
+          player.animationTime=25;
         }
         if (GetControllerState1().buttons.Right){
           MObj_moveTo(&player, player.x + (PIXEL_RESOLUTION * map->tileSize), player.y, PIXEL_RESOLUTION, true);
+          player.animation=&playerAnimR;
+          player.animationTime=25;
         }
         if (GetControllerState1().buttons.Left){
           MObj_moveTo(&player, player.x - (PIXEL_RESOLUTION * map->tileSize), player.y, PIXEL_RESOLUTION, true);
+          player.animation=&playerAnimL;
+          player.animationTime=25;
         }
   }
 
