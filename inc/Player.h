@@ -15,6 +15,8 @@ typedef enum MineralTypes{
 
 }MineralTypes;
 
+static const int TILE_EMPTY = MINERALCOUNT;
+
 typedef struct Mineral{
 
     int value;
@@ -75,6 +77,9 @@ bool mineralSell(Player *p, MineralTypes m, int amount);
 //Returns if player is allowed to move (Player might be overloaded)
 bool canPlayerMove(Player *p);
 extern Player p1;
+
+
+extern Mineral mineralInfo[MINERALCOUNT];
 
 #endif
 

@@ -22,25 +22,31 @@ void saveChunk(Chunk *c)
 
 //TiledMap *map;
 ChunkedMap *map;
-TileInfo tileInfo[3];
+TileInfo tileInfo[MINERALCOUNT + 1];
 MapObject player;
 
 
 
 Animation playerAnimR;
 Animation playerAnimL;
+Animation playerAnimRFast;
+Animation playerAnimLFast;
+bool moveDir = false;
 
 void testinit()
 {
   playerAnimR =  (Animation){50, 2, ANIM_REPEAT, &sprt_playerR[0]};
   playerAnimL =  (Animation){50, 2, ANIM_REPEAT, &sprt_playerL[0]};
-  tileInfo[0] =(TileInfo) {sprt_earth, COLLISION_NONE};
-  tileInfo[1] = (TileInfo) {sprt_diamonds, COLLISION_BB};
-  tileInfo[2] = (TileInfo) {sprt_diam_green, COLLISION_BB};
+  playerAnimRFast =  (Animation){10, 2, ANIM_REPEAT, &sprt_playerR[0]};
+  playerAnimLFast =  (Animation){10, 2, ANIM_REPEAT, &sprt_playerL[0]};
+  tileInfo[MIN_EARTH  ] =(TileInfo) {sprt_earth, COLLISION_BB};
+  tileInfo[MIN_COAL   ] = (TileInfo) {sprt_coal, COLLISION_BB};
+  tileInfo[MIN_IRON   ] = (TileInfo) {sprt_diam_green, COLLISION_BB};
+  tileInfo[MIN_GOLD   ] = (TileInfo) {sprt_gold, COLLISION_BB};
+  tileInfo[MIN_DIAMOND] = (TileInfo) {sprt_diamonds, COLLISION_BB};
+  tileInfo[TILE_EMPTY ] = (TileInfo) {sprt_empty, COLLISION_NONE};
   map = ChunkedMap_init(16, tileInfo, loadChunk, saveChunk);
-  //map = TiledMap_init(20, 20, 16, tileInfo);
-  //map->tiles[88] = 1;
-  //memset(&map->tiles[0], 1, map->sizeX * map->sizeY * sizeof(Tile));
+  ChunkedMap_setTile(map, 0, 0, TILE_EMPTY);
 
   player = (MapObject) {
     0, 0,
@@ -69,6 +75,8 @@ void isAlive(Bitmap *);
 
 Gamestate InitState = { Init, OnEnter, OnLeave, Update, Draw };
 Game* TheGame = &(Game) {&InitState};
+static int lastMenuUpdated = 0;
+static const int menuTickSpeed = 20;
 
 
 static int ticks = 0;
@@ -80,6 +88,7 @@ static int tempg = 0;
 
 
 Player p1;
+int mineTicker = 0;
 
 
 void Init(struct Gamestate* state)
@@ -90,62 +99,83 @@ void Init(struct Gamestate* state)
 
 void OnEnter(struct Gamestate* state)
 {
+  lastMenuUpdated = SysTickCounter;
 }
 
 void OnLeave(struct Gamestate* state)
 {
 }
 
-void Update(uint32_t a)
+
+
+// callback for player movement
+static bool resetAnimation(MapObject *o, MapObject *o2);
+static bool resetAnimation2(MapObject *o);
+static void resetAnimation3(MapObject *o);
+
+static inline void update_movePlayer(uint32_t a)
 {
-  //int oldPos[] = { player.x, player.y };
-  //      if (GetControllerState1().buttons.Up){
-  //              player.y -= PIXEL_RESOLUTION;
-  //      }
-  //      if (GetControllerState1().buttons.Down){
-  //              player.y += PIXEL_RESOLUTION;
-  //      }
-  //      if (GetControllerState1().buttons.Right){
-  //              player.x += PIXEL_RESOLUTION;
-  //      }
-  //      if (GetControllerState1().buttons.Left){	
-  //              player.x -= PIXEL_RESOLUTION;
-  //      }
-  //if (MObj_collisionMap(map, &player))
-  //{
-  //  // Reset position on collision
-  //  player.x = oldPos[0];
-  //  player.y = oldPos[1];
-  //}
-
-  //TiledMap_update(map, a);
-  ChunkedMap_update(map, a);
-
   if (!player.moving && canPlayerMove(&p1))
-  {  
-        if (GetControllerState1().buttons.Up){
-          MObj_moveTo(&player, player.x, player.y - (PIXEL_RESOLUTION * map->tileSize), PIXEL_RESOLUTION, true);
-          player.animationTime=25;
+  {
+        int tileSize = map->tileSize * PIXEL_RESOLUTION;
+        int tx = divRD(player.x, tileSize);
+        int ty = divRD(player.y, tileSize);
+
+        if (GetControllerState1().buttons.Up)
+        {
+          ty--;
         }
-        if (GetControllerState1().buttons.Down){
-          MObj_moveTo(&player, player.x, player.y + (PIXEL_RESOLUTION * map->tileSize), PIXEL_RESOLUTION, true);
-          player.animationTime=25;
+        else if (GetControllerState1().buttons.Down)
+        {
+          ty++;
         }
-        if (GetControllerState1().buttons.Right){
-          MObj_moveTo(&player, player.x + (PIXEL_RESOLUTION * map->tileSize), player.y, PIXEL_RESOLUTION, true);
-          player.animation=&playerAnimR;
-          player.animationTime=25;
+        else if (GetControllerState1().buttons.Right)
+        {
+          tx++;
+          moveDir = true;
         }
-        if (GetControllerState1().buttons.Left){
-          MObj_moveTo(&player, player.x - (PIXEL_RESOLUTION * map->tileSize), player.y, PIXEL_RESOLUTION, true);
-          player.animation=&playerAnimL;
-          player.animationTime=25;
+        else if (GetControllerState1().buttons.Left)
+        {
+          tx--;
+          moveDir = false;
+        }
+        else
+        {
+          return;
+        }
+
+
+        Tile tile = ChunkedMap_getTile(map, tx, ty);
+        if (tile == TILE_EMPTY)
+        {
+          mineTicker = 0;
+          MObj_moveTo(&player, tx * tileSize, ty * tileSize, PIXEL_RESOLUTION, true);
+          player.moving->onObjCollision = resetAnimation;
+          player.moving->onMapCollision = resetAnimation2;
+          player.moving->onTargetReached = resetAnimation3;
+          if (moveDir)
+            player.animation = &playerAnimRFast;
+          else
+            player.animation = &playerAnimLFast;
+        }
+
+        else if(true) //TODO check for inv space
+        {
+          mineTicker += a;
+          if (mineTicker >= mineralInfo[tile].hp)
+          {
+            ChunkedMap_setTile(map, tx, ty, TILE_EMPTY);
+            if (tile < MINERALCOUNT && tile != MIN_EARTH)
+              p1.minerals[tile]++;
+          }
         }
   }
+}
 
-
-
-
+void Update(uint32_t a)
+{
+  ChunkedMap_update(map, a);
+  update_movePlayer(a);
 
 
 	ticks += a;
@@ -165,23 +195,26 @@ void Update(uint32_t a)
 	}
 	if (GetControllerState1().buttons.L)	tempr -= 20;
 	if (GetControllerState1().buttons.R)	tempr += 20;
-  if (GetControllerState1().buttons.Start) ChangeState(&Menu);
+
+  if (SysTickCounter-lastMenuUpdated > menuTickSpeed)
+    if (GetControllerState1().buttons.Start)
+      ChangeState(&Menu);
 }
 
 void Draw(Bitmap *b)
 {
 
 	ClearBitmap(b);
-        //TiledMap_draw(b, map, 0, 0);
         ChunkedMap_draw(b, map,
             divRD(-player.x, PIXEL_RESOLUTION) + (SCREEN_X / 2 - 8),
-            divRD(-player.y, PIXEL_RESOLUTION) + (SCREEN_Y / 2 - 8));/**/
-        //ChunkedMap_draw(b, map, 0, 0);
+            divRD(-player.y, PIXEL_RESOLUTION) + (SCREEN_Y / 2 - 8));
+
   setFont(fontwhite8);
   char *highscoreString;
   asprintf(&highscoreString, "%d, %d", player.x, player.y);
   DrawText(b, highscoreString, 0, 8);
   free(highscoreString);
+
   //Warn if player is overloaded
   if(!canPlayerMove(&p1)){
     setFont(fontblack16);
@@ -210,3 +243,31 @@ void isAlive(Bitmap *b){
 
 
 
+
+// callbacks for player movement
+static bool resetAnimation(MapObject *o, MapObject *o2)
+{
+  if (moveDir)
+    player.animation = &playerAnimR;
+  else
+    player.animation = &playerAnimL;
+  MObj_cancelMovement(&player);
+  return false;
+}
+static bool resetAnimation2(MapObject *o)
+{
+  if (moveDir)
+    player.animation = &playerAnimR;
+  else
+    player.animation = &playerAnimL;
+  MObj_cancelMovement(&player);
+  return false;
+}
+static void resetAnimation3(MapObject *o)
+{
+  if (moveDir)
+    player.animation = &playerAnimR;
+  else
+    player.animation = &playerAnimL;
+  MObj_cancelMovement(&player);
+}

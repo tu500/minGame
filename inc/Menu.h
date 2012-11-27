@@ -8,6 +8,7 @@ extern Item* itemList[];
 
 void Menu_Init(struct Gamestate*);
 void Menu_OnEnter(struct Gamestate*);
+void Menu_OnLeave(struct Gamestate* state);
 void Menu_Update(uint32_t a);
 void Menu_Draw(Bitmap* b);
 

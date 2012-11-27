@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 
-Gamestate Menu = {Menu_Init, Menu_OnEnter, NULL, Menu_Update, Menu_Draw};
+Gamestate Menu = {Menu_Init, Menu_OnEnter, Menu_OnLeave, Menu_Update, Menu_Draw};
 
 
 int menuSelectedItem = 0;
@@ -32,7 +32,6 @@ int itemIndex = 0;
 void Menu_Init(struct Gamestate* state){
 	setFont(fontwhite8);
 	menuSelectedItem = 0;
-	lastMenuUpdated = SysTickCounter;
 }
 
 void Menu_Update(uint32_t a){
@@ -73,8 +72,13 @@ void Menu_Update(uint32_t a){
 
 }
 
-void Menu_OnEnter(struct Gamestate* gamestate){
+void Menu_OnEnter(struct Gamestate* gamestate)
+{
+	lastMenuUpdated = SysTickCounter;
+}
 
+void Menu_OnLeave(struct Gamestate* state)
+{
 }
 
 void Menu_Draw(Bitmap* b){
