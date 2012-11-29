@@ -12,10 +12,12 @@
 #include <TiledMap.h>
 #include <ChunkedMap.h>
 
+void genNewChunk(Chunk *c, int x, int y, int seed);
 void loadChunk(Chunk *c, int x, int y)
 {
   *c = (Chunk) {x,y};
-  c->tiles[15] = 1;
+  genNewChunk(c, x, y, 0x13370042);
+  //c->tiles[15] = 1;
 }
 void saveChunk(Chunk *c)
 {}
@@ -149,7 +151,7 @@ static inline void update_movePlayer(uint32_t a)
         if (tile == TILE_EMPTY)
         {
           mineTicker = 0;
-          MObj_moveTo(&player, tx * tileSize, ty * tileSize, PIXEL_RESOLUTION, true);
+          MObj_moveTo(&player, tx * tileSize, ty * tileSize, (PIXEL_RESOLUTION / 8) * playerSpeedWalk(&p1), true);
           player.moving->onObjCollision = resetAnimation;
           player.moving->onMapCollision = resetAnimation2;
           player.moving->onTargetReached = resetAnimation3;
@@ -161,7 +163,7 @@ static inline void update_movePlayer(uint32_t a)
 
         else if(true) //TODO check for inv space
         {
-          mineTicker += a;
+          mineTicker += a * playerSpeedDig(&p1);
           if (mineTicker >= mineralInfo[tile].hp)
           {
             ChunkedMap_setTile(map, tx, ty, TILE_EMPTY);

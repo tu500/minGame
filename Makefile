@@ -2,7 +2,7 @@
 TARGET = minGame
 
 # List C source files here.
-CCSOURCES = Game.c Player.c Sprites.c Menu.c
+CCSOURCES = Game.c Player.c Sprites.c Menu.c terrain.c
 
 # Additional local static libs to link against
 LIBS = gaming system stm32f4xx fatfs sdcard graphics

@@ -36,11 +36,11 @@ Item* itemList[] =  {
 
 Mineral mineralInfo[MINERALCOUNT] = {
     //VAL ,WGHT, HP ,PROB,UPPR,LOWR,NAME, DESC 
-    {    0,   0,   2,1000,   0, 255,"Earth", "Cmon, you dont need a description."},
-    {    5,   3,   6, 100,   0,  12,"Coal", "Nice coal."},
-    {   35,   7,   9,  70,   5,  18,"Iron", "Some iron. Sells good."},
-    {   60,  11,  20,  40,   9,  24,"Gold", "Shiny gold. Worth quite a lot."},
-    {  300,  40,  50,  10,  22,  30,"Diamond", "Precious diamonds. Aren't they beautiful?"}
+    {    0,   0,   40,1000,   0, 255,"Earth", "Cmon, you dont need a description."},
+    {    5,   3,  120, 100,   0,  12,"Coal", "Nice coal."},
+    {   35,   7,  180,  70,   5,  18,"Iron", "Some iron. Sells good."},
+    {   60,  11,  400,  40,   9,  24,"Gold", "Shiny gold. Worth quite a lot."},
+    {  300,  40, 1000,  10,  22,  30,"Diamond", "Precious diamonds. Aren't they beautiful?"}
 };
 
 //////// Starting Values ///////////

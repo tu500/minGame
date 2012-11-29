@@ -76,6 +76,15 @@ bool mineralSell(Player *p, MineralTypes m, int amount);
 
 //Returns if player is allowed to move (Player might be overloaded)
 bool canPlayerMove(Player *p);
+
+//Returns Players walking speed
+int playerSpeedWalk(Player *p);
+
+//Returns Players Digging speed
+int playerSpeedDig(Player *p);
+
+//Returns Players Max Depth
+int playerMaxDepth(Player *p);
 extern Player p1;
 
 
