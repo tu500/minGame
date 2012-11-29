@@ -169,6 +169,7 @@ static inline void update_movePlayer(uint32_t a)
             ChunkedMap_setTile(map, tx, ty, TILE_EMPTY);
             if (tile < MINERALCOUNT && tile != MIN_EARTH)
               p1.minerals[tile]++;
+            mineTicker = 0;
           }
         }
   }
